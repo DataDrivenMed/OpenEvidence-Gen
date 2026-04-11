@@ -892,31 +892,7 @@
   .sidebar-overlay.open { display: block; }
 
   /* ── RESPONSIVE ── */
-  @media (max-width: 900px) {
-    .mobile-nav-bar { display: flex; }
-    .mobile-progress { display: block; }
-    .sidebar {
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
-      top: 52px;
-      height: calc(100vh - 52px);
-    }
-    .sidebar.open { transform: translateX(0); }
-    .masthead { padding-left: 0; padding-top: 68px; }
-    .masthead-inner { padding: 24px 20px 20px; }
-    .page-shell { margin-left: 0; }
-    .main { padding: 30px 20px 60px; }
-    .report-title { font-size: 26px; }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); }
-    .summary-cols { grid-template-columns: 1fr; }
-    .scorecard-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .stat-grid { grid-template-columns: 1fr 1fr; }
-    .report-title { font-size: 22px; }
-    .main { padding: 24px 16px 60px; }
-    .section-title { font-size: 22px; }
-  }
+  /* Old responsive block replaced by comprehensive mobile CSS below */
 
   @media print {
     .sidebar, .mobile-nav-bar, .mobile-progress, .sidebar-overlay { display: none; }
@@ -4420,18 +4396,16 @@ if (fabTocMenu) {
     e.preventDefault();
     const targetId = link.getAttribute('href').replace('#', '');
     closeFabToc();
-    // FAB menu has no slide transition that affects layout,
-    // so we can navigate immediately (no offset needed, just nav bar)
     const targetEl = document.getElementById(targetId);
     if (!targetEl) return;
-    const navOffset = 65;
-    const getDocTop = (el) => {
-      let top = 0;
-      while (el) { top += el.offsetTop; el = el.offsetParent; }
-      return top;
-    };
-    const targetTop = Math.max(0, getDocTop(targetEl) - navOffset);
-    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    // Small delay for FAB menu close animation, then jump
+    setTimeout(function() {
+      targetEl.scrollIntoView({ block: 'start' });
+      // Compensate for fixed mobile nav bar
+      setTimeout(function() {
+        window.scrollBy({ top: -62, left: 0 });
+      }, 50);
+    }, 150);
   });
 }
 
@@ -4474,23 +4448,22 @@ function closeMobileNav() {
   btn.textContent = '☰';
 }
 
-// Robust navigation helper — waits for sidebar transition to finish
+// Robust navigation — works on iOS Safari, Android Chrome, all mobile browsers
 function navigateToSection(targetId) {
   const targetEl = document.getElementById(targetId);
   if (!targetEl) return;
-  // Use offsetTop which is document-relative (not affected by sidebar animation)
-  // Add 65px to clear the fixed mobile nav bar
-  const navOffset = 65;
-  const getDocTop = (el) => {
-    let top = 0;
-    while (el) { top += el.offsetTop; el = el.offsetParent; }
-    return top;
-  };
-  const targetTop = Math.max(0, getDocTop(targetEl) - navOffset);
-  // Wait for sidebar CSS transition (280ms) before scrolling
-  setTimeout(() => {
-    window.scrollTo({ top: targetTop, behavior: 'smooth' });
-  }, 320);
+  const NAV_HEIGHT = 62; // fixed mobile nav bar height + buffer
+
+  // Wait for sidebar slide-out transition to fully complete (0.28s)
+  // Use 400ms to be safe on slow/budget phones
+  setTimeout(function() {
+    // scrollIntoView is universally supported on all mobile browsers
+    targetEl.scrollIntoView({ block: 'start' });
+    // scrollIntoView ignores fixed headers — correct by scrolling up by nav height
+    setTimeout(function() {
+      window.scrollBy({ top: -NAV_HEIGHT, left: 0 });
+    }, 50);
+  }, 400);
 }
 
 // Sidebar TOC links
