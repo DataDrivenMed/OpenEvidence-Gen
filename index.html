@@ -4412,25 +4412,26 @@ function closeFabToc() {
   if (fabTocBtn) fabTocBtn.classList.remove('open');
 }
 
-// Handle FAB TOC link clicks via event delegation
-// Navigate first, close menu after — prevents overflow:hidden cancelling the href
+// FAB TOC link clicks — event delegation
 if (fabTocMenu) {
   fabTocMenu.addEventListener('click', function(e) {
     const link = e.target.closest('a[href]');
     if (!link) return;
     e.preventDefault();
     const targetId = link.getAttribute('href').replace('#', '');
-    const targetEl = document.getElementById(targetId);
-    // Close menu immediately (visual)
     closeFabToc();
-    // Navigate after a single frame so browser has processed the close
-    requestAnimationFrame(() => {
-      if (targetEl) {
-        const offset = window.innerWidth <= 900 ? 60 : 0;
-        const top = targetEl.getBoundingClientRect().top + window.scrollY - offset;
-        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-      }
-    });
+    // FAB menu has no slide transition that affects layout,
+    // so we can navigate immediately (no offset needed, just nav bar)
+    const targetEl = document.getElementById(targetId);
+    if (!targetEl) return;
+    const navOffset = 65;
+    const getDocTop = (el) => {
+      let top = 0;
+      while (el) { top += el.offsetTop; el = el.offsetParent; }
+      return top;
+    };
+    const targetTop = Math.max(0, getDocTop(targetEl) - navOffset);
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
   });
 }
 
@@ -4473,20 +4474,33 @@ function closeMobileNav() {
   btn.textContent = '☰';
 }
 
-// Close mobile nav when a TOC link is clicked — navigate first, then close
+// Robust navigation helper — waits for sidebar transition to finish
+function navigateToSection(targetId) {
+  const targetEl = document.getElementById(targetId);
+  if (!targetEl) return;
+  // Use offsetTop which is document-relative (not affected by sidebar animation)
+  // Add 65px to clear the fixed mobile nav bar
+  const navOffset = 65;
+  const getDocTop = (el) => {
+    let top = 0;
+    while (el) { top += el.offsetTop; el = el.offsetParent; }
+    return top;
+  };
+  const targetTop = Math.max(0, getDocTop(targetEl) - navOffset);
+  // Wait for sidebar CSS transition (280ms) before scrolling
+  setTimeout(() => {
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+  }, 320);
+}
+
+// Sidebar TOC links
 document.querySelectorAll('#toc a').forEach(a => {
   a.addEventListener('click', function(e) {
     if (window.innerWidth <= 900) {
       e.preventDefault();
       const targetId = this.getAttribute('href').replace('#', '');
-      const targetEl = document.getElementById(targetId);
       closeMobileNav();
-      requestAnimationFrame(() => {
-        if (targetEl) {
-          const top = targetEl.getBoundingClientRect().top + window.scrollY - 60;
-          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-        }
-      });
+      navigateToSection(targetId);
     }
   });
 });
