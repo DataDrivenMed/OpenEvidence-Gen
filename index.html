@@ -1555,25 +1555,25 @@
 <div class="fab-container" id="fabContainer">
   <div class="fab-toc-menu" id="fabTocMenu">
     <span class="fab-toc-label">Jump to section</span>
-    <a href="#abstract" onclick="closeFabToc()">Abstract</a>
-    <a href="#s1" onclick="closeFabToc()">1. Platform Overview</a>
-    <a href="#s2" onclick="closeFabToc()">2. Scale &amp; Adoption</a>
-    <a href="#s3" onclick="closeFabToc()">3. Technology &amp; Architecture</a>
-    <a href="#s4" onclick="closeFabToc()">4. Clinical Performance</a>
-    <a href="#s5" onclick="closeFabToc()">5. Failure Modes</a>
-    <a href="#s6" onclick="closeFabToc()">6. Business Model &amp; COI</a>
-    <a href="#s7" onclick="closeFabToc()">7. Product Suite</a>
-    <a href="#s8" onclick="closeFabToc()">8. Competitive Landscape</a>
-    <a href="#s9" onclick="closeFabToc()">9. Local Health Systems</a>
-    <a href="#s10" onclick="closeFabToc()">10. Regulatory &amp; Legal</a>
-    <a href="#s11" onclick="closeFabToc()">11. Strategic Position</a>
-    <a href="#s12" onclick="closeFabToc()">12. Guidance for Educators</a>
-    <a href="#s13" onclick="closeFabToc()">13. What We Don't Know</a>
-    <a href="#s14" onclick="closeFabToc()">14. RAG Architecture</a>
-    <a href="#s15" onclick="closeFabToc()">15. OE vs. UpToDate Expert AI</a>
-    <a href="#s16" onclick="closeFabToc()">16. The Doximity Playbook</a>
-    <a href="#s17" onclick="closeFabToc()">17. Key Risks</a>
-    <a href="#s18" onclick="closeFabToc()">18. Evaluating Any AI Tool</a>
+    <a href="#abstract">Abstract</a>
+    <a href="#s1">1. Platform Overview</a>
+    <a href="#s2">2. Scale &amp; Adoption</a>
+    <a href="#s3">3. Technology &amp; Architecture</a>
+    <a href="#s4">4. Clinical Performance</a>
+    <a href="#s5">5. Failure Modes</a>
+    <a href="#s6">6. Business Model &amp; COI</a>
+    <a href="#s7">7. Product Suite</a>
+    <a href="#s8">8. Competitive Landscape</a>
+    <a href="#s9">9. Local Health Systems</a>
+    <a href="#s10">10. Regulatory &amp; Legal</a>
+    <a href="#s11">11. Strategic Position</a>
+    <a href="#s12">12. Guidance for Educators</a>
+    <a href="#s13">13. What We Don't Know</a>
+    <a href="#s14">14. RAG Architecture</a>
+    <a href="#s15">15. OE vs. UpToDate Expert AI</a>
+    <a href="#s16">16. The Doximity Playbook</a>
+    <a href="#s17">17. Key Risks</a>
+    <a href="#s18">18. Evaluating Any AI Tool</a>
   </div>
   <div class="fab-buttons">
     <button class="fab-btn fab-top-btn" onclick="scrollToTop()" aria-label="Back to top">
@@ -4398,20 +4398,40 @@ function toggleFabToc() {
     closeFabToc();
   } else {
     fabTocMenu.classList.add('open');
-    fabTocBtn.classList.add('open');
-    // Scroll active link into view in menu
+    if (fabTocBtn) fabTocBtn.classList.add('open');
+    // Scroll active link into view inside the menu panel
     const activeLink = fabTocMenu.querySelector('a.active');
     if (activeLink) {
-      setTimeout(() => activeLink.scrollIntoView({ block: 'nearest' }), 50);
+      setTimeout(() => activeLink.scrollIntoView({ block: 'nearest' }), 60);
     }
   }
 }
 
 function closeFabToc() {
-  if (fabTocMenu) {
-    fabTocMenu.classList.remove('open');
-    fabTocBtn && fabTocBtn.classList.remove('open');
-  }
+  if (fabTocMenu) fabTocMenu.classList.remove('open');
+  if (fabTocBtn) fabTocBtn.classList.remove('open');
+}
+
+// Handle FAB TOC link clicks via event delegation
+// Navigate first, close menu after — prevents overflow:hidden cancelling the href
+if (fabTocMenu) {
+  fabTocMenu.addEventListener('click', function(e) {
+    const link = e.target.closest('a[href]');
+    if (!link) return;
+    e.preventDefault();
+    const targetId = link.getAttribute('href').replace('#', '');
+    const targetEl = document.getElementById(targetId);
+    // Close menu immediately (visual)
+    closeFabToc();
+    // Navigate after a single frame so browser has processed the close
+    requestAnimationFrame(() => {
+      if (targetEl) {
+        const offset = window.innerWidth <= 900 ? 60 : 0;
+        const top = targetEl.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      }
+    });
+  });
 }
 
 function scrollToTop() {
@@ -4453,10 +4473,21 @@ function closeMobileNav() {
   btn.textContent = '☰';
 }
 
-// Close mobile nav when a TOC link is clicked
+// Close mobile nav when a TOC link is clicked — navigate first, then close
 document.querySelectorAll('#toc a').forEach(a => {
-  a.addEventListener('click', () => {
-    if (window.innerWidth <= 900) closeMobileNav();
+  a.addEventListener('click', function(e) {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href').replace('#', '');
+      const targetEl = document.getElementById(targetId);
+      closeMobileNav();
+      requestAnimationFrame(() => {
+        if (targetEl) {
+          const top = targetEl.getBoundingClientRect().top + window.scrollY - 60;
+          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        }
+      });
+    }
   });
 });
 
